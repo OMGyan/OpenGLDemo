@@ -19,6 +19,7 @@ public class YXGLSurfaceView extends GLSurfaceView{
         //通知默认的EGLContextFactory和默认的EGLConfigChooser,选择哪个EGLContext客户端版本
         setEGLContextClientVersion(2);
         //设置与此视图关联的渲染器。同时启动那个线程,将调用渲染器，这又将导致渲染开始.
-        setRenderer(new YXRenderer(context));
+        //setRenderer(new YXRenderer(context));
+        setRenderer(new YXImageRenderer(context));
     }
 }
