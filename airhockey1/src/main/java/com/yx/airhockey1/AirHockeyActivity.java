@@ -22,8 +22,9 @@ public class AirHockeyActivity extends AppCompatActivity {
         boolean supportsEs2 = configurationInfo.reqGlEsVersion >= 0x20000;
 
         if(supportsEs2){
+
             glSurfaceView.setEGLContextClientVersion(2);
-            glSurfaceView.setRenderer(new AirHockeyRenderer());
+            glSurfaceView.setRenderer(new AirHockeyRenderer(this));
             rendererSet = true;
         }
 
