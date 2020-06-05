@@ -3,7 +3,6 @@ package com.yx.airhockeyortho;
 import android.content.Context;
 import android.opengl.GLSurfaceView;
 
-
 import com.yx.airhockeyortho.util.LoggerConfig;
 import com.yx.airhockeyortho.util.ShaderHelper;
 import com.yx.airhockeyortho.util.TextResourceReader;
@@ -14,6 +13,7 @@ import java.nio.FloatBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
 import static android.opengl.GLES20.*;
 import static android.opengl.GLUtils.*;
 import static android.opengl.Matrix.*;
@@ -29,6 +29,9 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     private Context context;
     private int program;
     private static final String A_COLOR = "a_Color";
+    private static final String U_MATRIX = "u_Matrix";
+    private final float[] projectionMatrix = new float[16];
+    private int uMatrixLocation;
     private static final int COLOR_COMPONENT_COUNT = 3;
     private static final int STRIDE = (POSITION_COMPONENT_COUNT+COLOR_COMPONENT_COUNT) * BYTES_PER_FLOAT;
     private int aColorLocation;
@@ -38,19 +41,19 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     public AirHockeyRenderer(Context context) {
         this.context = context;
         float[] tableVerticesWithTriangles = {
-                //三角形扇(卷曲顺序可以优化性能)
-                 0,0,1f,1f,1f,
-                 -0.5f,-0.5f,0.7f,0.7f,0.7f,
-                 0.5f,-0.5f,0.7f,0.7f,0.7f,
-                 0.5f,0.5f,0.7f,0.7f,0.7f,
-                -0.5f,0.5f,0.7f,0.7f,0.7f,
-                -0.5f,-0.5f,0.7f,0.7f,0.7f,
-                //直线
-                -0.5f,0f,1f,0f,0f,
-                0.5f,0f,1f,0f,0f,
-                //两个点
-                0f,-0.25f,0f,0f,1f,
-                0f,0.25f,1f,0f,0f
+                 //三角形扇(卷曲顺序可以优化性能)
+                 0f,0f,1f,1f,1f,
+                 -0.5f,-0.8f,0.7f,0.7f,0.7f,
+                 0.5f,-0.8f,0.7f,0.7f,0.7f,
+                 0.5f,0.8f,0.7f,0.7f,0.7f,
+                 -0.5f,0.8f,0.7f,0.7f,0.7f,
+                 -0.5f,-0.8f,0.7f,0.7f,0.7f,
+                 //直线
+                 -0.5f,0f,1f,0f,0f,
+                 0.5f,0f,1f,0f,0f,
+                 //两个点
+                 0f,-0.25f,0f,0f,1f,
+                 0f,0.25f,1f,0f,0f
         };
 
         vertexData = ByteBuffer.allocateDirect(tableVerticesWithTriangles.length * BYTES_PER_FLOAT)
@@ -76,6 +79,7 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
         aColorLocation = glGetAttribLocation(program,A_COLOR);
         //获取属性的位置
         aPositionLocation = glGetAttribLocation(program,A_POSITION);
+        uMatrixLocation = glGetUniformLocation(program,U_MATRIX);
         //保证数据是从开头开始读取
         vertexData.position(0);
         //关联属性与顶点数据的数组
@@ -90,21 +94,26 @@ public class AirHockeyRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         glViewport(0,0,width,height);
+        final float aspectRatio = width > height ? (float)width/(float)height : (float)height/(float)width;
+        if(width > height){
+            //横屏
+            orthoM(projectionMatrix,0,-aspectRatio,aspectRatio,-1f,1f,-1f,1f);
+        }else {
+            orthoM(projectionMatrix,0,-1f,1f,-aspectRatio,aspectRatio,-1f,1f);
+        }
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glUniformMatrix4fv(uMatrixLocation,1,false,projectionMatrix,0);
         //绘制桌子
         glDrawArrays(GL_TRIANGLE_FAN,0,6);
-
         //绘制分割线
         glDrawArrays(GL_LINES,6,2);
-
         //绘制棒槌点
         glDrawArrays(GL_POINTS,8,1);
-
         //绘制棒槌点
         glDrawArrays(GL_POINTS,9,1);
     }
